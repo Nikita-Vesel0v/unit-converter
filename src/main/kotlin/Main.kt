@@ -10,12 +10,14 @@ open class UnitConverter(inputValue: Double, from: String, private val to: Strin
     protected var convertedValue = -1.0
 
     fun printResultOfConversion() {
-        if (fromUnit == "feed" && value == 1.0) fromUnit = "foot"
-        if (toUnit == "feed" && convertedValue == 1.0) toUnit = "foot"
         when (convertedValue) {
             -1.0 -> println("Sorry, We can't do it. Try another one unit of measures")
             -2.0 -> println("Conversion from $fromUnit${addLetterS(fromUnit, 2.0)} to $to is impossible")
-            else -> println("$value ${fromUnit}${addLetterS(fromUnit, value)} is $convertedValue $toUnit${addLetterS(toUnit, convertedValue)}")
+            else -> {
+                if (fromUnit == "feet" && value == 1.0) fromUnit = "foot"
+                if (toUnit == "feet" && convertedValue == 1.0) toUnit = "foot"
+                println("$value ${fromUnit}${addLetterS(fromUnit, value)} is $convertedValue $toUnit${addLetterS(toUnit, convertedValue)}")
+            }
         }
     }
 }
