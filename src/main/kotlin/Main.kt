@@ -24,7 +24,7 @@ val coefficientToMeter = mapOf(
     "inches" to 0.0254,
 )
 
-fun readUnitOfMeasure() = try {
+fun readValueOfUnit() = try {
     scanner.nextDouble()
 } catch(e: InputMismatchException) {
     scanner.next().toDouble()
@@ -49,7 +49,7 @@ fun addLetterS(unit: String, value: Double) =
 fun main() {
     print("Enter a number and a measure of length: ")
 
-    val distance = readUnitOfMeasure()
+    val distance = readValueOfUnit()
     val unit = readUnit()
 
     if (unit != "unknown unit") {
