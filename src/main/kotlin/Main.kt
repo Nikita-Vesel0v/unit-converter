@@ -1,9 +1,28 @@
+import java.util.*
+
+fun kilometerToMeter(x: Int) = x * 1000
+
 fun main() {
-    println("""
-        145 centimeters is 1.45 meters
-        2 miles is 3.2187 kilometers
-        5.5 inches is 139.7 millimeters
-        12 degrees Celsius is 53.6 degrees Fahrenheit
-        3 pounds is 1.360776 kilograms
-    """.trimIndent())
+    val scanner = Scanner(System.`in`)
+
+    print("Enter a number and a measure: ")
+
+    val distance = scanner.nextInt()
+    val measure = scanner.next()
+
+    if (measure.lowercase() == "km" || measure.lowercase() == "kilometer" || measure.lowercase() == "kilometers") {
+        print(distance)
+        print(if (distance == 1) {
+            " kilometer "
+        } else {
+            " kilometers "
+        })
+        println("is ${kilometerToMeter(distance)} meters")
+    } else {
+        println("Wrong input")
+    }
+
+
+
+
 }
