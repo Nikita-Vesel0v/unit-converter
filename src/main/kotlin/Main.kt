@@ -1,5 +1,7 @@
 import java.util.*
 
+val scanner = Scanner(System.`in`)
+
 val unitsMeasure = mapOf(
     "meter" to listOf("m", "meter", "meters"),
     "kilometer" to listOf("km", "kilometer", "kilometers"),
@@ -22,6 +24,20 @@ val coefficientToMeter = mapOf(
     "inches" to 0.0254,
 )
 
+fun readUnitOfMeasure() = try {
+    scanner.nextDouble()
+} catch(e: InputMismatchException) {
+    scanner.next().toDouble()
+}
+
+fun readUnit() = try {
+        val inputUnit = scanner.next().lowercase()
+        unitsMeasure.filter { inputUnit in it.value }.keys.first()
+    } catch (e: NoSuchElementException) {
+        "unknown unit"
+    }
+
+
 fun toMeter(unit: String, value: Double): Double =
     if (unit in coefficientToMeter.keys) value * (coefficientToMeter[unit]!!) //use !! because check it above
     else -1.0
@@ -30,24 +46,11 @@ fun addLetterS(unit: String, value: Double) =
     if (value != 1.0 && (unit !in listOf("feet", "inches"))) "s"
     else ""
 
-
-
 fun main() {
-    val scanner = Scanner(System.`in`)
-
     print("Enter a number and a measure of length: ")
 
-    val distance = try {
-        scanner.nextDouble()
-    } catch(e: InputMismatchException) {
-        scanner.next().toDouble()
-    }
-    val inputUnit = scanner.next().lowercase()
-    val unit = try {
-        unitsMeasure.filter { inputUnit in it.value }.keys.first()
-    } catch (e: NoSuchElementException) {
-        "unknown unit"
-    }
+    val distance = readUnitOfMeasure()
+    val unit = readUnit()
 
     if (unit != "unknown unit") {
         val convertedDistance = toMeter(unit, distance)
@@ -57,6 +60,6 @@ fun main() {
             print("$distance $unit${addLetterS(unit, distance)} is $convertedDistance meter${addLetterS("meter", convertedDistance)}")
         }
     } else {
-        println("Wrong input. Unknown unit $inputUnit")
+        println("Wrong input. Unknown unit $unit")
     }
 }
