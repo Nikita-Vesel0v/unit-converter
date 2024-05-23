@@ -3,13 +3,20 @@ var scanner = Scanner(System.`in`)
 val lengthUnits = listOf("m", "meter", "meters", "km", "kilometer", "kilometers", "cm", "centimeter", "centimeters", "mm", "millimeter", "millimeters", "mi", "mile", "miles", "yd", "yard", "yards", "in", "inch", "inches", "ft", "foot", "feet")
 val weightUnits = listOf("g", "gram", "grams", "kg", "kilogram", "kilograms", "mg", "milligram", "milligrams", "lb", "pound", "pounds", "oz", "ounce", "ounces")
 
-open class UnitConverter(inputValue: Double, from: String, to: String) {
-    var value = inputValue
-    var fromUnit = from
-    var toUnit = to
+open class UnitConverter(inputValue: Double, from: String, private val to: String) {
+    protected var value = inputValue
+    protected var fromUnit = from
+    protected var toUnit = to
+    protected var convertedValue = -1.0
 
-    fun printResultOfConversion(convertedValue: Double) {
-        println("$value ${fromUnit}${addLetterS(fromUnit, value)} is $convertedValue $toUnit${addLetterS(toUnit, convertedValue)}")
+    fun printResultOfConversion() {
+        if (fromUnit == "feed" && value == 1.0) fromUnit = "foot"
+        if (toUnit == "feed" && convertedValue == 1.0) toUnit = "foot"
+        when (convertedValue) {
+            -1.0 -> println("Sorry, We can't do it. Try another one unit of measures")
+            -2.0 -> println("Conversion from $fromUnit${addLetterS(fromUnit, 2.0)} to $to is impossible")
+            else -> println("$value ${fromUnit}${addLetterS(fromUnit, value)} is $convertedValue $toUnit${addLetterS(toUnit, convertedValue)}")
+        }
     }
 }
 
@@ -22,7 +29,7 @@ class LengthConverter(inputValue: Double, from: String, to: String) : UnitConver
         "mile" to listOf("mi", "mile", "miles"),
         "yard" to listOf("yd", "yard", "yards"),
         "feet" to listOf("ft", "foot", "feet"),
-        "inch" to listOf("in", "inch", "inches"),
+        "inches" to listOf("in", "inch", "inches"),
     )
     private val coefficientToMeter = mapOf(
         "meter" to 1.0,
@@ -32,22 +39,24 @@ class LengthConverter(inputValue: Double, from: String, to: String) : UnitConver
         "mile" to 1609.35,
         "yard" to 0.9144,
         "feet" to 0.3048,
-        "inche" to 0.0254,
+        "inches" to 0.0254,
     )
 
     private fun readUnitLength(unit: String) = try {
         unitsLength.filter { unit in it.value }.keys.first()
     } catch (e: NoSuchElementException) {
-        "unknown unit of length"
+        "unknown unit"
     }
 
-    fun convert(): Double {
+    fun convert() {
         fromUnit = readUnitLength(fromUnit)
+
         toUnit = readUnitLength(toUnit)
-        return if (fromUnit in coefficientToMeter && toUnit in coefficientToMeter) {
-            value * coefficientToMeter[fromUnit]!! / coefficientToMeter[toUnit]!!
-        } else {
-            -1.0
+        convertedValue = when {
+            toUnit == "unknown unit" -> -2.0
+            fromUnit in coefficientToMeter && toUnit in coefficientToMeter ->
+                value * coefficientToMeter[fromUnit]!! / coefficientToMeter[toUnit]!!
+            else -> -1.0
         }
     }
 }
@@ -71,16 +80,17 @@ class WeightConverter(inputValue: Double, from: String, to: String) : UnitConver
     private fun readUnitWeight(unit: String) = try {
         unitsWeigh.filter { unit in it.value }.keys.first()
     } catch (e: NoSuchElementException) {
-        "unknown unit of length"
+        "unknown unit"
     }
 
-    fun convert(): Double {
+    fun convert() {
         fromUnit = readUnitWeight(fromUnit)
         toUnit = readUnitWeight(toUnit)
-        return if (fromUnit in coefficientToGram && toUnit in coefficientToGram) {
-            value * coefficientToGram[fromUnit]!! / coefficientToGram[toUnit]!!
-        } else {
-            -1.0
+        convertedValue = when {
+            toUnit == "unknown unit" -> -2.0
+            fromUnit in coefficientToGram && toUnit in coefficientToGram ->
+                value * coefficientToGram[fromUnit]!! / coefficientToGram[toUnit]!!
+            else -> -1.0
         }
     }
 }
@@ -102,7 +112,7 @@ fun readValueOfUnit() = try {
 fun main() {
     while (true) {
         print("Enter what you want to convert (or exit): ")
-        val inputData = readln()
+        val inputData = readln().lowercase()
         if (inputData == "exit") break
         scanner = Scanner(inputData)
         val value = readValueOfUnit()
@@ -117,24 +127,21 @@ fun main() {
         var lengthConverter: LengthConverter
         var weightConverter: WeightConverter
 
-        var convertedValue = -2.0
-
-
         when {
-            fromUnit in lengthUnits && toUnit in lengthUnits -> {
+            fromUnit in lengthUnits -> {
                 lengthConverter = LengthConverter(value, fromUnit, toUnit)
-                convertedValue = lengthConverter.convert()
-                lengthConverter.printResultOfConversion(convertedValue)
+                lengthConverter.convert()
+                lengthConverter.printResultOfConversion()
             }
 
-            fromUnit in weightUnits && toUnit in weightUnits -> {
+            fromUnit in weightUnits -> {
                 weightConverter = WeightConverter(value, fromUnit, toUnit)
-                convertedValue = weightConverter.convert()
-                weightConverter.printResultOfConversion(convertedValue)
+                weightConverter.convert()
+                weightConverter.printResultOfConversion()
             }
 
             fromUnit !in (lengthUnits + weightUnits) && toUnit in (lengthUnits + weightUnits) ->
-                println("Conversion from ??? to $toUnit${addLetterS(fromUnit, 2.0)} is impossible")
+                println("Conversion from ??? to $toUnit${addLetterS(toUnit, 2.0)} is impossible")
 
             fromUnit in (lengthUnits + weightUnits) && toUnit !in (lengthUnits + weightUnits) ->
                 println("Conversion from $fromUnit${addLetterS(fromUnit, value)} to ??? is impossible")
@@ -142,6 +149,6 @@ fun main() {
             else -> println("Conversion from ??? to ??? is impossible")
         }
 
-        if (convertedValue == -1.0) println("Sorry, We can't do it. Try another one unit of measures")
+
     }
 }
