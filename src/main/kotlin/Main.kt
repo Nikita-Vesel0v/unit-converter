@@ -1,7 +1,10 @@
 package converter
 
+import java.lang.StringBuilder
 import java.util.*
+
 var scanner = Scanner(System.`in`)
+
 val unitsWeight = mapOf(
     "gram" to listOf("g", "gram", "grams"),
     "kilogram" to listOf("kg", "kilogram", "kilograms"),
@@ -18,6 +21,11 @@ val unitsLength = mapOf(
     "yard" to listOf("yd", "yard", "yards"),
     "feet" to listOf("ft", "foot", "feet"),
     "inches" to listOf("in", "inch", "inches")
+)
+val unitsTemperature = mapOf(
+    "Celsius" to listOf( "degree celsius", "degrees celsius", "celsius", "dc", "c", "Celsius"),
+    "Fahrenheit" to listOf("degree fahrenheit", "degrees fahrenheit", "fahrenheit", "df", "f", "Fahrenheit"),
+    "kelvin" to listOf("kelvin", "kelvins", "k")
 )
 val coefficientsWeight = mapOf(
     "gram" to 1.0,
@@ -40,7 +48,7 @@ val coefficientsLength = mapOf(
 
 open class UnitConverter(
     protected open var units: Map<String, List<String>>,
-    protected open var coefficients: Map<String, Double>
+    protected open var coefficients: Map<String, Double> = emptyMap()
 ) {
     private var value = 0.0
     private var fromUnit = "from"
@@ -73,16 +81,15 @@ open class UnitConverter(
         }
     }
 
-    fun convert(inputValue: Double) {
-        value = inputValue
+    open fun convert(value: Double) {
+        this.value = value
         convertedValue = when {
             fromUnit in coefficients && toUnit in coefficients ->
-                value * coefficients[fromUnit]!! / coefficients[toUnit]!!
+                this.value * coefficients[fromUnit]!! / coefficients[toUnit]!!
             else -> -1.0
         }
     }
 }
-
 class LengthConverter : UnitConverter(unitsLength, coefficientsLength) {
     fun availableUnits(): List<String> {
         val availableUnits = mutableListOf<String>()
@@ -99,6 +106,18 @@ class WeightConverter : UnitConverter(unitsWeight, coefficientsWeight) {
             unit.forEach { availableUnits.add(it) }
         }
         return availableUnits.toList()
+    }
+}
+class TempConverter : UnitConverter(unitsTemperature) {
+    fun availableUnits(): List<String> {
+        val availableUnits = mutableListOf<String>()
+        for (unit in unitsTemperature.values) {
+            unit.forEach { availableUnits.add(it) }
+        }
+        return availableUnits.toList()
+    }
+    override fun convert(value: Double) {
+        println("From = ${getFromUnit()}, To = ${getToUnit()}, Value = $value")
     }
 }
 
@@ -120,8 +139,11 @@ fun addLetterS(unit: String, value: Double) =
 fun main() {
     val lengthConverter = LengthConverter()
     val weightConverter = WeightConverter()
+    val tempConverter = TempConverter()
+
     val availableWeightUnits = weightConverter.availableUnits()
     val availableLengthUnits = lengthConverter.availableUnits()
+    val availableTempUnits = tempConverter.availableUnits()
 
     while (true) {
         print("Enter what you want to convert (or exit): ")
@@ -133,19 +155,33 @@ fun main() {
             println("Invalid input value. Try Again")
             continue
         }
-        var fromUnit = scanner.next()
-        scanner.next()
-        var toUnit = scanner.next()
+
+        var fromUnit = buildString {
+            append(scanner.next())
+            val word = scanner.next()
+            if (word != "to") {
+                append(" ")
+                append(word)
+            }
+
+        }
+        var toUnit = inputData.substringAfter("to ")
 
         lengthConverter.setFromUnit(fromUnit)
         weightConverter.setFromUnit(fromUnit)
+        tempConverter.setFromUnit(fromUnit)
         lengthConverter.setToUnit(toUnit)
         weightConverter.setToUnit(toUnit)
+        tempConverter.setToUnit(toUnit)
 
         val lF = lengthConverter.getFromUnit()
         val wF = weightConverter.getFromUnit()
+        val tF = tempConverter.getFromUnit()
+        println(tF)
         val lT = lengthConverter.getToUnit()
         val wT = weightConverter.getToUnit()
+        val tT = tempConverter.getToUnit()
+        println(tT)
 
         when {
             lF in availableLengthUnits && lT in availableLengthUnits -> {
@@ -157,7 +193,10 @@ fun main() {
                 weightConverter.convert(value)
                 weightConverter.printResultOfConversion()
             }
-
+            tF in availableTempUnits && tT in availableTempUnits -> {
+                tempConverter.convert(value)
+                tempConverter.printResultOfConversion()
+            }
             else -> {
                 if (lF == "???" && wF != "???") fromUnit = wF
                 if (wF == "???" && lF != "???") fromUnit = lF
