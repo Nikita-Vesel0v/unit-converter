@@ -50,19 +50,19 @@ open class UnitConverter(
     protected open var units: Map<String, List<String>>,
     protected open var coefficients: Map<String, Double> = emptyMap()
 ) {
-    private var value = 0.0
-    private var fromUnit = "from"
-    private var toUnit = "to"
-    private var convertedValue = 0.0
+    protected var value = 0.0
+    protected var fromUnit = "from"
+    protected var toUnit = "to"
+    protected var convertedValue = 0.0
 
-    fun setFromUnit(unit: String) {
+    fun setFrom(unit: String) {
         fromUnit = readUnit(unit)
     }
-    fun setToUnit(unit: String) {
+    fun setTo(unit: String) {
         toUnit = readUnit(unit)
     }
-    fun getFromUnit() = fromUnit
-    fun getToUnit() = toUnit
+    fun getFrom() = fromUnit
+    fun getTo() = toUnit
 
     private fun readUnit(unit: String) = try {
         units.filter { unit in it.value }.keys.first()
@@ -117,7 +117,24 @@ class TempConverter : UnitConverter(unitsTemperature) {
         return availableUnits.toList()
     }
     override fun convert(value: Double) {
-        println("From = ${getFromUnit()}, To = ${getToUnit()}, Value = $value")
+        //to celsius
+        this.value = when (fromUnit) {
+            "Celsius" -> value
+            "Fahrenheit" -> (value - 32) * 5 / 9
+            "kelvin" -> value - 273.15
+            else -> -1.0
+        }
+        if (value == -1.0) {
+            convertedValue = -1.0
+        }
+        //from celsius
+        convertedValue = when (toUnit) {
+            "Celsius" -> this.value
+            "Fahrenheit" -> this.value * 9 / 5 + 32
+            "kelvin" -> value + 273.15
+            else -> -1.0
+        }
+
     }
 }
 
@@ -167,43 +184,47 @@ fun main() {
         }
         var toUnit = inputData.substringAfter("to ")
 
-        lengthConverter.setFromUnit(fromUnit)
-        weightConverter.setFromUnit(fromUnit)
-        tempConverter.setFromUnit(fromUnit)
-        lengthConverter.setToUnit(toUnit)
-        weightConverter.setToUnit(toUnit)
-        tempConverter.setToUnit(toUnit)
+        lengthConverter.setFrom(fromUnit)
+        weightConverter.setFrom(fromUnit)
+        tempConverter.setFrom(fromUnit)
+        lengthConverter.setTo(toUnit)
+        weightConverter.setTo(toUnit)
+        tempConverter.setTo(toUnit)
 
-        val lF = lengthConverter.getFromUnit()
-        val wF = weightConverter.getFromUnit()
-        val tF = tempConverter.getFromUnit()
-        println(tF)
-        val lT = lengthConverter.getToUnit()
-        val wT = weightConverter.getToUnit()
-        val tT = tempConverter.getToUnit()
-        println(tT)
+        val lengthFrom = lengthConverter.getFrom()
+        val weightFrom = weightConverter.getFrom()
+        val tempFrom = tempConverter.getFrom()
+        val lengthTo = lengthConverter.getTo()
+        val weightTo = weightConverter.getTo()
+        val tempTo = tempConverter.getTo()
 
         when {
-            lF in availableLengthUnits && lT in availableLengthUnits -> {
+            lengthFrom in availableLengthUnits && lengthTo in availableLengthUnits -> {
                 lengthConverter.convert(value)
                 lengthConverter.printResultOfConversion()
             }
 
-            wF in availableWeightUnits && wT in availableWeightUnits -> {
+            weightFrom in availableWeightUnits && weightTo in availableWeightUnits -> {
                 weightConverter.convert(value)
                 weightConverter.printResultOfConversion()
             }
-            tF in availableTempUnits && tT in availableTempUnits -> {
+            tempFrom in availableTempUnits && tempTo in availableTempUnits -> {
                 tempConverter.convert(value)
                 tempConverter.printResultOfConversion()
             }
             else -> {
-                if (lF == "???" && wF != "???") fromUnit = wF
-                if (wF == "???" && lF != "???") fromUnit = lF
-                if (lT == "???" && wT != "???") toUnit = wT
-                if (wT == "???" && lT != "???") toUnit = lT
-                if (wF == "???" && lF == "???") fromUnit = "???"
-                if (wT == "???" && lT == "???") toUnit = "???"
+                if (lengthFrom == "???" && tempFrom == "???" && weightFrom != "???") fromUnit = weightFrom
+                if (weightFrom == "???" && tempFrom == "???" && lengthFrom != "???") fromUnit = lengthFrom
+                if (weightFrom == "???" && tempFrom != "???" && lengthFrom == "???") fromUnit = tempFrom
+
+
+                if (lengthTo == "???" && tempTo == "???" && weightTo != "???") toUnit = weightTo
+                if (weightTo == "???" && tempTo == "???" && lengthTo != "???") toUnit = lengthTo
+                if (weightTo == "???" && tempTo != "???" && lengthTo == "???") toUnit = tempTo
+
+                if (weightFrom == "???" && lengthFrom == "???") fromUnit = "???"
+                if (weightTo == "???" && lengthTo == "???") toUnit = "???"
+
                 println("Conversion from $fromUnit${addLetterS(fromUnit, 2.0)} to $toUnit${addLetterS(toUnit, 2.0)} is impossible")
             }
         }
