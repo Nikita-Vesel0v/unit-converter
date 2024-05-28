@@ -1,37 +1,70 @@
+package converter
+
 import java.util.*
 var scanner = Scanner(System.`in`)
+val unitsWeight = mapOf(
+    "gram" to listOf("g", "gram", "grams"),
+    "kilogram" to listOf("kg", "kilogram", "kilograms"),
+    "milligram" to listOf("mg", "milligram", "milligrams"),
+    "pound" to listOf("lb", "pound", "pounds"),
+    "ounce" to listOf("oz", "ounce", "ounces")
+)
+val unitsLength = mapOf(
+    "meter" to listOf("m", "meter", "meters"),
+    "kilometer" to listOf("km", "kilometer", "kilometers"),
+    "centimeter" to listOf("cm", "centimeter", "centimeters"),
+    "millimeter" to listOf("mm", "millimeter", "millimeters"),
+    "mile" to listOf("mi", "mile", "miles"),
+    "yard" to listOf("yd", "yard", "yards"),
+    "feet" to listOf("ft", "foot", "feet"),
+    "inches" to listOf("in", "inch", "inches")
+)
+val coefficientsWeight = mapOf(
+    "gram" to 1.0,
+    "kilogram" to 1000.0,
+    "milligram" to 0.001,
+    "pound" to 453.592,
+    "ounce" to 28.3495,
+)
+val coefficientsLength = mapOf(
+    "meter" to 1.0,
+    "kilometer" to 1000.0,
+    "centimeter" to 0.01,
+    "millimeter" to 0.001,
+    "mile" to 1609.35,
+    "yard" to 0.9144,
+    "feet" to 0.3048,
+    "inches" to 0.0254
+)
 
-open class UnitConverter {
-    private var inputTo = "input unit to"
+
+open class UnitConverter(
+    protected open var units: Map<String, List<String>>,
+    protected open var coefficients: Map<String, Double>
+) {
     private var value = 0.0
     private var fromUnit = "from"
     private var toUnit = "to"
     private var convertedValue = 0.0
-    protected open var units = mapOf<String, List<String>>()
-    protected open var coefficients = mapOf<String, Double>()
-    private var availableUnits = listOf<String>()
 
-    init {
-        availableUnits = availableUnits()
+    fun setFromUnit(unit: String) {
+        fromUnit = readUnit(unit)
+    }
+    fun setToUnit(unit: String) {
+        toUnit = readUnit(unit)
+    }
+    fun getFromUnit() = fromUnit
+    fun getToUnit() = toUnit
+
+    private fun readUnit(unit: String) = try {
+        units.filter { unit in it.value }.keys.first()
+    } catch (e: NoSuchElementException) {
+        "???"
     }
 
-    private fun availableUnits(): List<String> {
-        val availableUnits = mutableListOf<String>()
-        for (unit in units.values) {
-            unit.forEach { availableUnits.add(it) }
-        }
-        return availableUnits.toList()
-    }
-    private fun readUnit(unit: String) =
-        try {
-            units.filter { unit in it.value }.keys.first()
-        } catch (e: NoSuchElementException) {
-            "unknown unit"
-        }
     fun printResultOfConversion() {
         when (convertedValue) {
             -1.0 -> println("Sorry, We can't do it. Try another one unit of measures")
-            -2.0 -> println("Conversion from $fromUnit${addLetterS(fromUnit, 2.0)} to $inputTo is impossible")
             else -> {
                 if (fromUnit == "feet" && value == 1.0) fromUnit = "foot"
                 if (toUnit == "feet" && convertedValue == 1.0) toUnit = "foot"
@@ -39,66 +72,36 @@ open class UnitConverter {
             }
         }
     }
-    fun convert(inputValue: Double, from: String, to: String) {
-        inputTo = to
-        fromUnit = readUnit(from)
 
-        toUnit = readUnit(to)
-
+    fun convert(inputValue: Double) {
         value = inputValue
         convertedValue = when {
-            toUnit == "unknown unit" -> -2.0
             fromUnit in coefficients && toUnit in coefficients ->
                 value * coefficients[fromUnit]!! / coefficients[toUnit]!!
             else -> -1.0
         }
     }
-    fun getAvailableUnits() = availableUnits
 }
 
-class LengthConverter : UnitConverter() {
-    override var units = mapOf(
-        "meter" to listOf("m", "meter", "meters"),
-        "kilometer" to listOf("km", "kilometer", "kilometers"),
-        "centimeter" to listOf("cm", "centimeter", "centimeters"),
-        "millimeter" to listOf("mm", "millimeter", "millimeters"),
-        "mile" to listOf("mi", "mile", "miles"),
-        "yard" to listOf("yd", "yard", "yards"),
-        "feet" to listOf("ft", "foot", "feet"),
-        "inches" to listOf("in", "inch", "inches"),
-    )
-    override var coefficients = mapOf(
-        "meter" to 1.0,
-        "kilometer" to 1000.0,
-        "centimeter" to 0.01,
-        "millimeter" to 0.001,
-        "mile" to 1609.35,
-        "yard" to 0.9144,
-        "feet" to 0.3048,
-        "inches" to 0.0254,
-    )
+class LengthConverter : UnitConverter(unitsLength, coefficientsLength) {
+    fun availableUnits(): List<String> {
+        val availableUnits = mutableListOf<String>()
+        for (unit in unitsLength.values) {
+            unit.forEach { availableUnits.add(it) }
+        }
+        return availableUnits.toList()
+    }
+}
+class WeightConverter : UnitConverter(unitsWeight, coefficientsWeight) {
+    fun availableUnits(): List<String> {
+        val availableUnits = mutableListOf<String>()
+        for (unit in unitsWeight.values) {
+            unit.forEach { availableUnits.add(it) }
+        }
+        return availableUnits.toList()
+    }
 }
 
-class WeightConverter : UnitConverter() {
-    override var units = mapOf(
-        "gram" to listOf("g", "gram", "grams"),
-        "kilogram" to listOf("kg", "kilogram", "kilograms"),
-        "milligram" to listOf("mg", "milligram", "milligrams"),
-        "pound" to listOf("lb", "pound", "pounds"),
-        "ounce" to listOf("oz", "ounce", "ounces"),
-    )
-    override var coefficients = mapOf(
-        "gram" to 1.0,
-        "kilogram" to 1000.0,
-        "milligram" to 0.001,
-        "pound" to 453.592,
-        "ounce" to 28.3495,
-    )
-}
-
-fun addLetterS(unit: String, value: Double) =
-    if (value != 1.0 && (unit !in listOf("feet", "inches"))) "s"
-    else ""
 fun readValueOfUnit() =
     try {
         scanner.nextDouble()
@@ -108,14 +111,17 @@ fun readValueOfUnit() =
         } catch (e: NumberFormatException) {
             -1.0
         }
-}
+    }
+
+fun addLetterS(unit: String, value: Double) =
+    if (value != 1.0 && (unit !in listOf("feet", "inches")) && unit != "???") "s"
+    else ""
 
 fun main() {
     val lengthConverter = LengthConverter()
     val weightConverter = WeightConverter()
-
-    val lengthUnits = lengthConverter.getAvailableUnits()
-    val weightUnits = weightConverter.getAvailableUnits()
+    val availableWeightUnits = weightConverter.availableUnits()
+    val availableLengthUnits = lengthConverter.availableUnits()
 
     while (true) {
         print("Enter what you want to convert (or exit): ")
@@ -127,29 +133,40 @@ fun main() {
             println("Invalid input value. Try Again")
             continue
         }
-
-        val fromUnit = scanner.next()
+        var fromUnit = scanner.next()
         scanner.next()
-        val toUnit = scanner.next()
+        var toUnit = scanner.next()
+
+        lengthConverter.setFromUnit(fromUnit)
+        weightConverter.setFromUnit(fromUnit)
+        lengthConverter.setToUnit(toUnit)
+        weightConverter.setToUnit(toUnit)
+
+        val lF = lengthConverter.getFromUnit()
+        val wF = weightConverter.getFromUnit()
+        val lT = lengthConverter.getToUnit()
+        val wT = weightConverter.getToUnit()
 
         when {
-            fromUnit in lengthUnits -> {
-                lengthConverter.convert(value, fromUnit, toUnit)
+            lF in availableLengthUnits && lT in availableLengthUnits -> {
+                lengthConverter.convert(value)
                 lengthConverter.printResultOfConversion()
             }
 
-            fromUnit in weightUnits -> {
-                weightConverter.convert(value, fromUnit, toUnit)
+            wF in availableWeightUnits && wT in availableWeightUnits -> {
+                weightConverter.convert(value)
                 weightConverter.printResultOfConversion()
             }
 
-            fromUnit !in (lengthUnits + weightUnits) && toUnit in (lengthUnits + weightUnits) ->
-                println("Conversion from ??? to $toUnit${addLetterS(toUnit, 2.0)} is impossible")
-
-            fromUnit in (lengthUnits + weightUnits) && toUnit !in (lengthUnits + weightUnits) ->
-                println("Conversion from $fromUnit${addLetterS(fromUnit, value)} to ??? is impossible")
-
-            else -> println("Conversion from ??? to ??? is impossible")
+            else -> {
+                if (lF == "???" && wF != "???") fromUnit = wF
+                if (wF == "???" && lF != "???") fromUnit = lF
+                if (lT == "???" && wT != "???") toUnit = wT
+                if (wT == "???" && lT != "???") toUnit = lT
+                if (wF == "???" && lF == "???") fromUnit = "???"
+                if (wT == "???" && lT == "???") toUnit = "???"
+                println("Conversion from $fromUnit${addLetterS(fromUnit, 2.0)} to $toUnit${addLetterS(toUnit, 2.0)} is impossible")
+            }
         }
     }
 }
