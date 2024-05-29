@@ -70,18 +70,20 @@ open class UnitConverter(
         "???"
     }
 
-    fun printResultOfConversion() {
+    open fun printResultOfConversion() {
         when (convertedValue) {
-            -1.0 -> println("Sorry, We can't do it. Try another one unit of measures")
+            -1.0 -> println("Parse error")
             else -> {
                 if (fromUnit == "feet" && value == 1.0) fromUnit = "foot"
                 if (toUnit == "feet" && convertedValue == 1.0) toUnit = "foot"
                 println("$value ${fromUnit}${addLetterS(fromUnit, value)} is $convertedValue $toUnit${addLetterS(toUnit, convertedValue)}")
             }
         }
+        println()
     }
 
     open fun convert(value: Double) {
+        if (value < 0) error("$value can't be negative")
         this.value = value
         convertedValue = when {
             fromUnit in coefficients && toUnit in coefficients ->
@@ -118,23 +120,36 @@ class TempConverter : UnitConverter(unitsTemperature) {
     }
     override fun convert(value: Double) {
         //to celsius
-        this.value = when (fromUnit) {
+        this.value = value
+        convertedValue = when (fromUnit) {
             "Celsius" -> value
             "Fahrenheit" -> (value - 32) * 5 / 9
             "kelvin" -> value - 273.15
-            else -> -1.0
+            else -> throw Exception("Conversion error")
         }
-        if (value == -1.0) {
-            convertedValue = -1.0
-        }
+
         //from celsius
         convertedValue = when (toUnit) {
-            "Celsius" -> this.value
-            "Fahrenheit" -> this.value * 9 / 5 + 32
-            "kelvin" -> value + 273.15
+            "Celsius" -> convertedValue
+            "Fahrenheit" -> convertedValue * 9 / 5 + 32
+            "kelvin" -> convertedValue + 273.15
             else -> -1.0
         }
 
+
+    }
+    override fun printResultOfConversion() {
+        when (convertedValue) {
+            -1.0 -> println("Parse error")
+            else -> {
+                fromUnit = if (fromUnit != "kelvin") "degree${addLetterS(fromUnit, value)} $fromUnit"
+                else "${fromUnit}${addLetterS(fromUnit, value)}"
+                toUnit = if (toUnit != "kelvin") "degree${addLetterS(toUnit, convertedValue)} $toUnit"
+                else "${toUnit}${addLetterS(toUnit, convertedValue)}"
+                println("$value $fromUnit is $convertedValue $toUnit")
+            }
+        }
+        println()
     }
 }
 
@@ -142,11 +157,7 @@ fun readValueOfUnit() =
     try {
         scanner.nextDouble()
     } catch (e: InputMismatchException) {
-        try {
-            scanner.next().toDouble()
-        } catch (e: NumberFormatException) {
-            -1.0
-        }
+        scanner.next().toDouble()
     }
 
 fun addLetterS(unit: String, value: Double) =
@@ -162,27 +173,34 @@ fun main() {
     val availableLengthUnits = lengthConverter.availableUnits()
     val availableTempUnits = tempConverter.availableUnits()
 
+    var value: Double
+
     while (true) {
         print("Enter what you want to convert (or exit): ")
         val inputData = readln().lowercase()
         if (inputData == "exit") break
         scanner = Scanner(inputData)
-        val value = readValueOfUnit()
-        if (value == -1.0) {
-            println("Invalid input value. Try Again")
+
+
+        try {
+            value = readValueOfUnit()
+        } catch (e: NumberFormatException) {
+            println("Parse error\n ")
             continue
         }
 
         var fromUnit = buildString {
             append(scanner.next())
             val word = scanner.next()
-            if (word != "to") {
+            if (word != "to" && word != "in") {
                 append(" ")
                 append(word)
             }
-
         }
-        var toUnit = inputData.substringAfter("to ")
+        var toUnit = buildString {
+            if (" in " in inputData) append(inputData.substringAfter("in "))
+            if (" to " in inputData) append(inputData.substringAfter("to "))
+        }
 
         lengthConverter.setFrom(fromUnit)
         weightConverter.setFrom(fromUnit)
@@ -198,13 +216,17 @@ fun main() {
         val weightTo = weightConverter.getTo()
         val tempTo = tempConverter.getTo()
 
+
+
         when {
             lengthFrom in availableLengthUnits && lengthTo in availableLengthUnits -> {
+                if (value < 0) { println("Length shouldn't be negative"); continue }
                 lengthConverter.convert(value)
                 lengthConverter.printResultOfConversion()
             }
 
             weightFrom in availableWeightUnits && weightTo in availableWeightUnits -> {
+                if (value < 0) { println("Weight shouldn't be negative"); continue }
                 weightConverter.convert(value)
                 weightConverter.printResultOfConversion()
             }
@@ -222,8 +244,8 @@ fun main() {
                 if (weightTo == "???" && tempTo == "???" && lengthTo != "???") toUnit = lengthTo
                 if (weightTo == "???" && tempTo != "???" && lengthTo == "???") toUnit = tempTo
 
-                if (weightFrom == "???" && lengthFrom == "???") fromUnit = "???"
-                if (weightTo == "???" && lengthTo == "???") toUnit = "???"
+                if (weightFrom == "???" && lengthFrom == "???" && tempFrom == "???") fromUnit = "???"
+                if (weightTo == "???" && lengthTo == "???" && tempTo == "???") toUnit = "???"
 
                 println("Conversion from $fromUnit${addLetterS(fromUnit, 2.0)} to $toUnit${addLetterS(toUnit, 2.0)} is impossible")
             }
